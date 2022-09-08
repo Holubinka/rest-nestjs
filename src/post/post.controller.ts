@@ -4,8 +4,8 @@ import { CreateCommentDto, CreatePostDto } from './dto';
 import { CommentInterface, CommentsInterface, PostInterface, PostsInterface } from './post.interface';
 import { User } from '../shared/decorators/user.decorator';
 import { HasRoles } from '../shared/decorators/role.decorator';
-import { Role } from '../user/user.interface';
 import { RolesGuard } from '../shared/guards/roles.guard';
+import { Role } from '@prisma/client';
 
 @Controller('posts')
 export class PostController {

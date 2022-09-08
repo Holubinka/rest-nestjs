@@ -1,3 +1,5 @@
+import { Role } from '@prisma/client';
+
 export interface UserData {
   username: string;
   email: string;
@@ -17,9 +19,4 @@ export interface User extends UserData {
   firstName: string;
   lastName: string;
   role: Role;
-}
-
-export enum Role {
-  ADMIN = 'admin',
-  USER = 'user',
 }

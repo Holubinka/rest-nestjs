@@ -2,10 +2,10 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto';
 import { User } from '../shared/decorators/user.decorator';
-import { ProfileData, Role, UserData } from './user.interface';
+import { ProfileData, UserData } from './user.interface';
 import { HasRoles } from '../shared/decorators/role.decorator';
 import { RolesGuard } from '../shared/guards/roles.guard';
-import { User as UserModel } from '@prisma/client';
+import { Role, User as UserModel } from '@prisma/client';
 
 @Controller('users')
 export class UserController {

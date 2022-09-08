@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { User as UserModel } from '@prisma/client';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
-import { ProfileData, UserData } from './user.interface';
+import { ProfileData, User, UserData } from './user.interface';
 
 const userSelect = {
   username: true,
@@ -83,7 +83,7 @@ export class UserService {
     }
   }
 
-  async createUser(userData: CreateUserDto): Promise<UserData> {
+  async createUser(userData: CreateUserDto): Promise<UserModel> {
     const userInDb = await this.prismaService.user.findMany({
       where: {
         OR: [
@@ -103,9 +103,8 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    return await this.prismaService.user.create({
+    return this.prismaService.user.create({
       data: { ...userData, password: hashedPassword },
-      select: userSelect,
     });
   }
 

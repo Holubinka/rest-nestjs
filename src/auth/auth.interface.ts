@@ -1,8 +1,8 @@
 export interface LoginStatus {
-  accessToken: string;
+  accessToken?: string;
 }
 
-export interface RegistrationStatus {
+export interface RegistrationStatus extends LoginStatus {
   success: boolean;
   message: string;
 }

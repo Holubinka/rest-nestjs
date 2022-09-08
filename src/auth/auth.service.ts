@@ -24,7 +24,13 @@ export class AuthService {
     };
 
     try {
-      await this.usersService.createUser(userDto);
+      const user = await this.usersService.createUser(userDto);
+      const accessToken = AuthService._createToken(user);
+
+      return {
+        ...status,
+        accessToken,
+      };
     } catch ({ message }) {
       status = {
         success: false,
