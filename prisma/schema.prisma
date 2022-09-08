@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  email         String      @unique
+  username      String      @unique
+  password      String
+  role          Role        @default(USER)
+  firstName     String?
+  lastName      String?
+  bio           String?
+  posts         Post[]      @relation("UserPosts")
+  favorites     Post[]      @relation("UserFavorites", fields: [favoritesIDs])
+  favoritesIDs  String[]    @db.Array(ObjectId)
+  comments      Comment[]
+  followedBy    User[]      @relation("UserFollows", fields: [followedByIDs])
+  followedByIDs String[]    @db.Array(ObjectId)
+  following     User[]      @relation("UserFollows", fields: [followingIDs])
+  followingIDs  String[]    @db.Array(ObjectId)
+}
+
+model Post {
+  id              String      @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  title           String
+  slug            String
+  description     String
+  content         String?
+  published       Boolean     @default(false)
+  viewCount       Int         @default(0)
+  author          User        @relation("UserPosts", fields: [authorId], references: [id])
+  authorId        String      @db.ObjectId
+  favoritedBy     User[]      @relation("UserFavorites", fields: [favoritedByIDs])
+  favoritedByIDs  String[]    @db.Array(ObjectId)
+  comments        Comment[]
+
+  @@unique([slug])
+}
+
+model Comment {
+  id          String        @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  body        String
+  post        Post          @relation(fields: [postId], references: [id])
+  postId      String        @db.ObjectId
+  author      User          @relation(fields: [authorId], references: [id])
+  authorId    String        @db.ObjectId
+}
+
+enum Role {
+  ADMIN       @map("admin")
+  USER        @map("user")
+}
