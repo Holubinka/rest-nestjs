@@ -4,6 +4,7 @@ export interface UserData {
   username: string;
   email: string;
   bio: string;
+  avatar?: Avatar;
 }
 
 export interface ProfileData {
@@ -12,6 +13,7 @@ export interface ProfileData {
   lastName?: string;
   bio: string;
   following?: boolean;
+  avatar?: Avatar;
 }
 
 export interface User extends UserData {
@@ -19,4 +21,10 @@ export interface User extends UserData {
   firstName: string;
   lastName: string;
   role: Role;
+}
+
+export interface Avatar {
+  id: string;
+  url: string;
+  key: string;
 }

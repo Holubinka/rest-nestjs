@@ -4,9 +4,22 @@ import { PostService } from './post.service';
 import { AuthMiddleware } from '../auth/auth.middleware';
 import { UserModule } from '../user/user.module';
 import { PrismaService } from '../prisma.service';
+import { MulterModule } from '@nestjs/platform-express';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { FileModule } from '../files/file.module';
+import { FileService } from '../files/file.service';
+import { multerConfig } from '../utils/multer.config';
 
 @Module({
-  imports: [UserModule],
+  imports: [
+    UserModule,
+    MulterModule.registerAsync({
+      imports: [ConfigModule, FileModule],
+      useFactory: async (config: ConfigService, fileService: FileService) =>
+        multerConfig(config, fileService),
+      inject: [ConfigService, FileService],
+    }),
+  ],
   providers: [PostService, PrismaService],
   controllers: [PostController],
 })

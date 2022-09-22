@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreateCommentDto, CreatePostDto } from './dto';
 import { CommentInterface, CommentsInterface, PostInterface, PostsInterface } from './post.interface';
@@ -6,6 +18,9 @@ import { User } from '../shared/decorators/user.decorator';
 import { HasRoles } from '../shared/decorators/role.decorator';
 import { RolesGuard } from '../shared/guards/roles.guard';
 import { Role } from '@prisma/client';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { UploadFile } from '../shared/decorators/file.decorator';
+import { CreateFileDto } from '../files/dto/create-file.dto';
 
 @Controller('posts')
 export class PostController {
@@ -44,8 +59,13 @@ export class PostController {
   }
 
   @Post('/')
-  async create(@User('id') userId: string, @Body() postData: CreatePostDto): Promise<PostInterface> {
-    return this.postService.create(userId, postData);
+  @UseInterceptors(FilesInterceptor('images'))
+  async create(
+    @User('id') userId: string,
+    @Body() postData: CreatePostDto,
+    @UploadFile() images: CreateFileDto,
+  ): Promise<PostInterface> {
+    return this.postService.create(userId, { ...postData, images });
   }
 
   @Put(':slug')

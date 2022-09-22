@@ -3,8 +3,22 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { PrismaService } from '../prisma.service';
 import { AuthMiddleware } from '../auth/auth.middleware';
+import { FileModule } from '../files/file.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { multerConfig } from '../utils/multer.config';
+import { FileService } from '../files/file.service';
 
 @Module({
+  imports: [
+    FileModule,
+    MulterModule.registerAsync({
+      imports: [ConfigModule, FileModule],
+      useFactory: async (config: ConfigService, fileService: FileService) =>
+        multerConfig(config, fileService),
+      inject: [ConfigService, FileService],
+    }),
+  ],
   controllers: [UserController],
   providers: [PrismaService, UserService],
   exports: [UserService],
@@ -20,6 +34,8 @@ export class UserModule implements NestModule {
         { path: 'users/:username', method: RequestMethod.DELETE },
         { path: 'users/:username/follow', method: RequestMethod.POST },
         { path: 'users/:username/follow', method: RequestMethod.DELETE },
+        { path: 'users/avatar', method: RequestMethod.POST },
+        { path: 'users/avatar', method: RequestMethod.DELETE },
       );
   }
 }

@@ -1,4 +1,5 @@
 import { IsOptional } from 'class-validator';
+import { Express } from 'express';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -9,4 +10,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   bio: string;
+
+  @IsOptional()
+  file: Express.Multer.File;
 }

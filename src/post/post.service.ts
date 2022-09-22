@@ -2,14 +2,20 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '@prisma/client';
 import { CommentInterface, CommentsInterface, PostInterface, PostsInterface } from './post.interface';
-
 import slugify from 'slugify';
+import { CreatePostDto } from './dto';
 
 const postAuthorSelect = {
   username: true,
   firstName: true,
   lastName: true,
   followedBy: { select: { id: true } },
+};
+
+const imagesSelect = {
+  id: true,
+  key: true,
+  url: true,
 };
 
 const commentSelect = {
@@ -23,6 +29,7 @@ const commentSelect = {
 const postInclude = {
   author: { select: postAuthorSelect },
   favoritedBy: { select: { id: true } },
+  images: { select: imagesSelect },
 };
 
 // map dynamic value "following" (is the current user following this author)
@@ -124,7 +131,7 @@ export class PostService {
   }
 
   async findOne(userId: string, slug: string): Promise<PostInterface> {
-    let post: any = await this.prisma.post.findFirst({
+    let post: any = await this.prisma.post.findFirstOrThrow({
       where: { slug },
       include: postInclude,
     });
@@ -195,7 +202,7 @@ export class PostService {
     return { comments };
   }
 
-  async create(userId: string, payload): Promise<PostInterface> {
+  async create(userId: string, payload: CreatePostDto): Promise<PostInterface> {
     let post: any = await this.prisma.post.findUnique({
       where: { slug: this.generateSlug(payload.title) },
     });
@@ -211,11 +218,15 @@ export class PostService {
         author: {
           connect: { id: userId },
         },
+        images: {
+          createMany: {
+            data: payload.images,
+          },
+        },
       },
       include: postInclude,
     });
 
-    console.dir(post, { depth: null });
     post = mapDynamicValues(userId, post);
     return { post };
   }
@@ -239,18 +250,14 @@ export class PostService {
   }
 
   async views(slug: string): Promise<PostInterface> {
-    let post = await this.prisma.post.findFirst({
+    await this.prisma.post.findFirstOrThrow({
       where: {
         slug,
         published: true,
       },
     });
 
-    if (!post) {
-      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
-    }
-
-    post = await this.prisma.post.update({
+    const post = await this.prisma.post.update({
       where: {
         slug,
       },
@@ -265,13 +272,9 @@ export class PostService {
   }
 
   async publish(userId: string, slug: string): Promise<PostInterface> {
-    const postData = await this.prisma.post.findUnique({
+    await this.prisma.post.findUniqueOrThrow({
       where: { slug },
     });
-
-    if (!postData) {
-      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
-    }
 
     let post: any = await this.prisma.post.update({
       where: { slug },

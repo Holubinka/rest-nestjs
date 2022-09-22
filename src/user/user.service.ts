@@ -1,9 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { User as UserModel } from '@prisma/client';
+import { User as UserModel, Prisma } from '@prisma/client';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
-import { ProfileData, User, UserData } from './user.interface';
+import { Avatar, ProfileData, User, UserData } from './user.interface';
+import { FileService } from '../files/file.service';
+import { RegistrationStatus } from '../auth/auth.interface';
+import { exclude } from 'src/utils/excludeFields';
 
 const userSelect = {
   username: true,
@@ -22,43 +25,27 @@ const profileSelect = {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService, private readonly fileService: FileService) {}
 
   async getAllUsers(): Promise<UserData[]> {
     return await this.prismaService.user.findMany({ select: userSelect });
   }
 
-  async getUserById(id: string, options: any = {}): Promise<Partial<UserModel>> {
-    const user = await this.prismaService.user.findUnique({
+  async getUserById(id: string, options: Prisma.UserSelect = {}): Promise<Partial<User>> {
+    return this.prismaService.user.findUniqueOrThrow({
       where: { id },
       select: { ...profileSelect, ...options },
     });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
   }
 
   async getUserByEmail(email: string): Promise<UserModel> {
-    const user = await this.prismaService.user.findUnique({ where: { email } });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
+    return this.prismaService.user.findUniqueOrThrow({ where: { email } });
   }
 
-  async getUserByUsername(username: string): Promise<UserModel> {
-    const user = await this.prismaService.user.findUnique({ where: { username } });
+  async getUserByUsername(username: string): Promise<User> {
+    const user = await this.prismaService.user.findUniqueOrThrow({ where: { username } });
 
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
+    return exclude(user, 'password');
   }
 
   async updateUser(id: string, userData: UpdateUserDto): Promise<UserData> {
@@ -113,14 +100,10 @@ export class UserService {
       throw new HttpException('Follower username not provided.', HttpStatus.BAD_REQUEST);
     }
 
-    const followed = await this.prismaService.user.findUnique({
+    const followed = await this.prismaService.user.findUniqueOrThrow({
       where: { username },
       select: profileSelect,
     });
-
-    if (!followed) {
-      throw new HttpException('User to follow not found.', HttpStatus.NOT_FOUND);
-    }
 
     if (followed.id === userId) {
       throw new HttpException('Follower and FollowingId cannot be equal.', HttpStatus.BAD_REQUEST);
@@ -156,10 +139,23 @@ export class UserService {
       },
     });
 
-    const { id, followedByIDs, ...rest } = followed;
-    return {
-      ...rest,
-      following: toggleFollow,
-    };
+    return { ...exclude(followed, 'id', 'followedByIDs'), following: toggleFollow };
+  }
+
+  async addAvatar(userId: string, file: Express.Multer.File): Promise<Avatar> {
+    await this.deleteAvatar(userId);
+    return this.fileService.uploadPublicFile(file, userId);
+  }
+
+  async deleteAvatar(userId: string): Promise<RegistrationStatus> {
+    const user = await this.getUserById(userId, { avatar: true });
+    const fileId = user.avatar?.id;
+    if (fileId) {
+      await this.fileService.deletePublicFile(fileId);
+      return {
+        success: true,
+        message: 'Image deleted',
+      };
+    }
   }
 }

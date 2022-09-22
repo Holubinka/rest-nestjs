@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["mongoDb"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -19,6 +18,7 @@ model User {
   role          Role        @default(USER)
   firstName     String?
   lastName      String?
+  avatar        File?
   bio           String?
   posts         Post[]      @relation("UserPosts")
   favorites     Post[]      @relation("UserFavorites", fields: [favoritesIDs], references: [id])
@@ -38,6 +38,7 @@ model Post {
   slug            String
   description     String
   content         String?
+  images          File[]
   published       Boolean     @default(false)
   viewCount       Int         @default(0)
   author          User        @relation("UserPosts", fields: [authorId], references: [id])
@@ -58,6 +59,16 @@ model Comment {
   postId      String        @db.ObjectId
   author      User          @relation(fields: [authorId], references: [id])
   authorId    String        @db.ObjectId
+}
+
+model File {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  key    String
+  url    String
+  user   User?    @relation(fields: [userId], references: [id])
+  userId String?  @unique
+  post   Post?    @relation(fields: [postId], references: [id])
+  postId String?
 }
 
 enum Role {
